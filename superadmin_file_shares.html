@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Super Admin - File Shares
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h1 class="my-4">📁 Super Admin File Sharing</h1>
+
+    <!-- 🔔 Flash Messages – same as normal user page -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags|default:''|slice:":5" == 'file-' %}
+                <div class="text-danger text-center delete-msg mt-3">
+                    <b>{{ message }}</b>
+                </div>
+            {% else %}
+                <div class="text-danger text-center delete-msg mt-3">
+                    <b>{{ message }}</b>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <!-- 🔍 Search Form -->
+    <form method="GET" action="" class="mb-4" id="searchForm">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Search files..." value="{{ query }}">
+            <input type="hidden" name="section" id="searchSection" value="{{ active_section|default:'shared' }}">
+            <button class="btn btn-success" type="submit">Search</button>
+        </div>
+    </form>
+
+    {% if shared_files %}
+        {% for file in shared_files %}
+            <div class="border border-secondary my-3 p-3 rounded">
+                <p><b>Shared by:</b>
+                    {% if file.user %}
+                        {{ file.user.name }} : ({{ file.user.email }})
+                    {% elif file.guest_uploader_name %}
+                        {{ file.guest_uploader_name }}
+                    {% else %}
+                        Guest
+                    {% endif %}
+                </p>
+                <p><b>Shared with:</b> 
+                    {% if file.receiver %}
+                        {{ file.receiver.name }} : ({{ file.receiver.email }})
+                    {% else %}
+                        <i>No receiver specified</i>
+                    {% endif %}
+                </p>
+                <h5>Title: {{ file.title }}</h5>
+                <p><b>Description:</b> {{ file.description }}</p>
+                <p><b>Shared on:</b> {{ file.shared_at|date:"F j, Y - g:i a" }}</p>
+
+                <!-- Updated View button linking to file_detail_view for richer preview -->
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'file_detail_view' file.id %}">View</a>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'view_file' file.id %}?download=1">Download</a>
+
+                <!-- 🗑 Superadmin Delete Button -->
+                <form method="POST" action="{% url 'delete_file' file.id %}" style="display:inline;" 
+                      onsubmit="return confirm('Are you sure you want to delete this file?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                </form>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No files have been shared yet.</p>
+    {% endif %}
+</div>
+
+<!-- ✅ Auto-hide the message after 3 seconds -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const messages = document.querySelectorAll('.delete-msg');
+        messages.forEach(msg => {
+            setTimeout(() => {
+                msg.style.transition = "opacity 0.5s ease-out";
+                msg.style.opacity = '0';
+                setTimeout(() => {
+                    msg.style.display = 'none';
+                }, 500);
+            }, 3000);
+        });
+    });
+</script>
+{% endblock %}

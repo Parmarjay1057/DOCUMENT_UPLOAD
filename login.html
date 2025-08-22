@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Login
+{% endblock %}
+
+{% block navbar %}
+<!-- Empty block: hides navbar -->
+{% endblock %}
+
+{% block body %}
+<div class="container w-25 my-5 bg-light text-dark rounded p-4 shadow">
+    <h2 class="mb-4 text-center">Login</h2>
+    <hr>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form action="{% url 'login' %}" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <input type="email" class="form-control" name="email" placeholder="Email" required>
+        </div>
+        <div class="mb-3">
+            <input type="password" class="form-control" name="pwd" placeholder="Password" required>
+        </div>
+        <div class="mb-3">
+            <input type="submit" class="btn btn-primary w-100" value="Login">
+        </div>
+        <div class="text-center">
+            Don't have an account? <a href="{% url 'signup' %}">Signup</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% comment %} Fly.io, Railway, Koyeb 
+ i have created a  file sharing software in that i have logging, signup. And index page as home page in this the document is shown which is shared or the user has send 
+to the another user. I have a upload a file page in that i have 2 option 1. to share document 2. to  request a document . I have file request page in that we seen  the requests for
+the document from the users and we our request also show. I have pre-define list page in that we create the list of the document that is used for the preticular work and setting
+page for what we have shared till now all the shared file, audio, video, image, pdfs. this whole project can i deploy only by using the railway? {% endcomment %}

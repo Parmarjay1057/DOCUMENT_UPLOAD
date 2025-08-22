@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Document to {{ doc_list.name }}{% endblock %}
+
+{% block body %}
+<div class="container" style="max-width: 600px; margin-top: 20px;">
+  <h1>Add Document to "{{ doc_list.name }}"</h1>
+
+  <form method="post" action="">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="title" class="form-label">Document Name <span class="text-danger">*</span></label>
+      <input type="text" id="title" name="title" class="form-control" placeholder="Enter document name" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="description" class="form-label">Description (Optional)</label>
+      <textarea id="description" name="description" class="form-control" rows="3" placeholder="Optional description"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-success">Add Document</button>
+    <a href="{% url 'predefined_lists' %}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}

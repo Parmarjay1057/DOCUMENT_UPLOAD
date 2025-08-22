@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Superadmin - File Requests Overview{% endblock %}
+
+{% block body %}
+<div class="container" style="margin-left: 220px; margin-top: 20px;">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="text-danger text-center delete-msg mt-3">
+                <b>{{ message }}</b>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- ✅ Auto-hide messages after 3 seconds -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const messages = document.querySelectorAll('.delete-msg');
+            messages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.transition = "opacity 0.5s ease-out";
+                    msg.style.opacity = '0';
+                    setTimeout(() => { msg.style.display = 'none'; }, 500);
+                }, 3000);
+            });
+        });
+    </script>
+
+    <h1>Superadmin - All File Requests</h1>
+
+    <form method="GET" class="mb-3 d-flex" role="search">
+        <input 
+            type="text" 
+            name="q" 
+            class="form-control me-2" 
+            placeholder="Search by requester or receiver name/email..." 
+            value="{{ search_query|default:'' }}"
+            aria-label="Search"
+        >
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    {% if all_requests %}
+        {% for req in all_requests %}
+            <div class="border rounded p-3 mb-3 shadow-sm" style="background-color: #f8f9fa; position: relative;">
+                <p><strong>Request by:</strong> {{ req.requester.name }} ({{ req.requester.email }})</p>
+                <p><strong>Receive by:</strong> {{ req.receiver.name }} ({{ req.receiver.email }})</p>
+
+                {% if req.message %}
+                    <p><strong>Message:</strong> {{ req.message }}</p>
+                {% else %}
+                    <p>
+                        <strong>Requested Documents:</strong>
+                        <a href="#" onclick="toggleDocuments('{{ req.id }}', event)">
+                            {% if req.requested_files.first and req.requested_files.first.document_list_item %}
+                                {{ req.requested_files.first.document_list_item.document_list.name }} ▼
+                            {% else %}
+                                <em>Unknown List</em> ▼
+                            {% endif %}
+                        </a>
+                    </p>
+
+                    <ul id="documentList-{{ req.id }}" style="display: none; margin-left: 20px;">
+                        {% for requested_file in req.requested_files.all %}
+                            {% if requested_file.document_list_item %}
+                                <li>{{ requested_file.document_list_item.title }}</li>
+                            {% else %}
+                                <li><em>Unknown Document</em></li>
+                            {% endif %}
+                        {% empty %}
+                            <li><em>No documents requested.</em></li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                <p>
+                    <small class="text-muted">Requested at: {{ req.requested_at|date:"F j, Y, g:i a" }}</small>
+                </p>
+
+                <form method="POST" action="{% url 'delete_file_request' req.id %}"
+                      onsubmit="return confirm('Are you sure you want to delete this request?');"
+                      style="position: absolute; top: 10px; right: 10px;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                </form>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No file requests found.</p>
+    {% endif %}
+</div>
+
+<!-- ✅ Toggle Script -->
+<script>
+function toggleDocuments(id, event) {
+    event.preventDefault();
+    const list = document.getElementById('documentList-' + id);
+    if (list.style.display === 'none' || list.style.display === '') {
+        list.style.display = 'block';
+    } else {
+        list.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

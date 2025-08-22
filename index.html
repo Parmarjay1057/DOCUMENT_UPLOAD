@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h1 class="my-4">📁 File Sharing </h1>
+        
+        <!-- 🔍 Search Form -->
+        <form method="GET" action="" class="mb-4" id="searchForm">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control" placeholder="Search files..." value="{{ query }}">
+                <input type="hidden" name="section" id="searchSection" value="{{ active_section|default:'shared' }}">
+                <button class="btn btn-success" type="submit">Search</button>
+            </div>
+        </form>
+
+        <!-- 🔘 Toggle Buttons -->
+        <div class="btn-group mb-4" role="group">
+            <button id="sharedBtn" class="btn btn-outline-success" onclick="showSection('shared')">📤 Shared Files Section</button>
+            <button id="receivedBtn" class="btn btn-outline-primary" onclick="showSection('received')">📥 Received Files Section</button>
+        </div>
+                      <!-- 🔔 Flash Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags|default:''|slice:":5" == 'file-' %}
+                    <div class="text-danger text-center delete-msg mt-3">
+                        <b>{{ message }}</b>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        <!-- 📤 Shared Files Section -->
+        <div id="sharedSection">
+            {% if shared_files %}
+                {% for file in shared_files %}
+                    <div class="border border-success my-4 p-4">
+                        <h5>Title: {{ file.title }}</h5>
+                        <p><b>Description:</b> {{ file.description }}</p>
+                        <p><b>Shared on:</b> {{ file.shared_at|date:"F j, Y - g:i a" }}</p>
+
+                        <a class="btn btn-outline-success btn-sm" href="{% url 'view_file' file.id %}">View</a>
+                        <a class="btn btn-outline-success btn-sm" href="{% url 'view_file' file.id %}?download=1">Download</a>
+
+
+                        <!-- Delete button only for owner -->
+                        <form method="POST" action="{% url 'delete_file' file.id %}" style="display:inline;" onsubmit="return confirmDelete('{{ file.title }}');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>File not found.</p>
+            {% endif %}
+        </div>
+
+        <!-- 📥 Received Files Section -->
+        <div id="receivedSection">
+            {% if received_files %}
+                {% for file in received_files %}
+                    <div class="border border-primary my-4 p-4">
+                        <p><b>Shared by:</b>
+                            {% if file.user %}
+                                {{ file.user.name }}
+                            {% elif file.guest_uploader_name %}
+                                {{ file.guest_uploader_name }}
+                            {% else %}
+                                Guest
+                            {% endif %}
+                         </p>
+                        <h5>Title: {{ file.title }}</h5>
+                        <p><b>Description:</b> {{ file.description }}</p>
+                        <p><b>Received on:</b> {{ file.shared_at|date:"F j, Y - g:i a" }}</p>
+
+                        <a class="btn btn-outline-success btn-sm" href="{% url 'view_file' file.id %}">View</a>
+                        <a class="btn btn-outline-success btn-sm" href="{% url 'view_file' file.id %}?download=1">Download</a>
+
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>File not found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ✅ JavaScript for toggle behavior and remembering section -->
+    <script>
+        function showSection(section) {
+            const sharedBtn = document.getElementById('sharedBtn');
+            const receivedBtn = document.getElementById('receivedBtn');
+            const sharedSection = document.getElementById('sharedSection');
+            const receivedSection = document.getElementById('receivedSection');
+            const searchSectionInput = document.getElementById('searchSection');
+
+            if (section === 'shared') {
+                sharedSection.style.display = 'block';
+                receivedSection.style.display = 'none';
+                sharedBtn.classList.add('active');
+                receivedBtn.classList.remove('active');
+                searchSectionInput.value = 'shared';
+            } else {
+                sharedSection.style.display = 'none';
+                receivedSection.style.display = 'block';
+                sharedBtn.classList.remove('active');
+                receivedBtn.classList.add('active');
+                searchSectionInput.value = 'received';
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const notif = document.getElementById("newFileNotification");
+            if (notif) {
+                setTimeout(() => {
+                    notif.style.transition = "opacity 0.5s ease-out";
+                    notif.style.opacity = "0";
+                    setTimeout(() => notif.style.display = "none", 500);
+                }, 5000); // 5 seconds
+            }
+        })
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const query = "{{ query|escapejs }}";
+            const activeSection = "{{ active_section|default:'shared'|escapejs }}";
+
+            // Set correct section on load
+            showSection(activeSection);
+
+            // Auto-hide flash messages
+            const messages = document.querySelectorAll('.delete-msg');
+            messages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.transition = "opacity 0.5s ease-out";
+                    msg.style.opacity = '0';
+                    setTimeout(() => {
+                        msg.style.display = 'none';
+                    }, 500);
+                }, 3000);
+            });
+        });
+
+        function confirmDelete(fileTitle) {
+            return confirm(`Do you want to delete "${fileTitle}"?`);
+        }
+
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    cookie = cookie.trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function markRequestsSeen() {
+            const csrftoken = getCookie('csrftoken');
+
+            fetch('/mark-requests-seen/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin', // THIS IS IMPORTANT
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                console.log('Requests marked as seen:', data);
+                if(data.status === 'success'){
+                    // Optionally update UI to remove badge:
+                    const badge = document.querySelector('#requestDropdown .badge');
+                    if (badge) badge.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error marking requests as seen:', error);
+            });
+        }
+    </script>
+
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}File Upload{% endblock %}
+
+{% block body %}
+
+<div class="container w-50">
+
+  <!-- Success/Error messages in green text -->
+  <div class="text-center my-3">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="fade-message" role="alert" style="color: green; font-weight: bold; font-size: 1.1rem;">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <h2 class="my-3">Share a File</h2>
+  <hr>
+  
+  <!-- Your forms... -->
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const messages = document.querySelectorAll('.fade-message');
+      messages.forEach(msg => {
+        setTimeout(() => {
+          msg.style.transition = "opacity 0.5s ease-out";
+          msg.style.opacity = '0';
+          setTimeout(() => {
+            msg.style.display = 'none';
+          }, 500);
+        }, 3000);
+      });
+    });
+  </script>
+
+  <!-- ✅ File Upload Form -->
+  <form id="uploadForm" class="form-control" action="{% url 'file_upload' %}" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" name="upload_file" value="1">
+    <input type="text" class="form-control my-3" name="title" placeholder="Title" required>
+    <textarea placeholder="Description" name="description" class="form-control my-3" required></textarea>
+    <input type="file" class="form-control my-3" name="file_to_upload" id="fileInput" multiple>
+
+    <label for="receiver_id" class="my-1">Send to:</label>
+    <select name="receiver_id" class="form-control my-2" required>
+      <option value="">-- Select User --</option>
+      {% for user in all_users %}
+        {% if user.email != request.session.user %}
+          <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
+        {% endif %}
+      {% endfor %}
+    </select>
+
+    <div id="fileError" class="text-danger my-2" style="display:none;">File not selected</div>
+    <input type="submit" value="Send File" class="btn btn-outline-primary my-3">
+  </form>
+
+  <hr class="my-5">
+
+  <!-- File Request Section -->
+  <h2 class="my-3">Request Specific Files</h2>
+  <form method="post" class="form-control" id="fileRequestForm" action="{% url 'file_upload' %}">
+    {% csrf_token %}
+    <input type="hidden" name="request_files" value="1">
+
+    <label>Select registered user :</label>
+    <select name="request_receiver_id" id="receiverSelect" class="form-control my-2">
+      <option value="">-- Select User --</option>
+      {% for user in all_users %}
+        <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
+      {% endfor %}
+    </select>
+
+    <div class="text-center text-muted my-2">--- OR ---</div>
+
+    <label>Guest WhatsApp Phone:</label>
+    <input type="tel" name="guest_phone" id="guestPhone" class="form-control my-2" placeholder="e.g. Enter Mobile Number">
+
+    <label>Select Predefined Document List (optional):</label>
+    <select id="document_list_select" name="document_list" class="form-control my-2">
+      <option value="">-- Select a Document List --</option>
+      {% for doc_list in document_lists %}
+        <option value="{{ doc_list.id }}">{{ doc_list.name }}</option>
+      {% endfor %}
+    </select>
+
+    <div id="document_items_container" class="my-2">
+      <!-- Document checkboxes will load here dynamically -->
+    </div>
+
+    <label for="request_message">Message (optional):</label>
+    <textarea name="request_message" id="request_message" rows="4" class="form-control my-2" placeholder="Write a message or additional instructions"></textarea>
+    <button type="submit" class="btn btn-outline-success mt-2 mb-3">Send Request</button>
+  </form>
+
+  <!-- 🌐 WhatsApp Link and Temporary Upload Link Output -->
+  {% if wa_url and upload_link %}
+    <div class="alert alert-info mt-3">
+      <h5>Temporary Upload Link Generated</h5>
+      <p>Send this WhatsApp message to your guest:</p>
+      <a href="{{ wa_url }}" target="_blank" class="btn btn-success mb-2">Open WhatsApp Chat</a>
+      <br>
+      <small>Or share this direct upload link: <a href="{{ upload_link }}" target="_blank">{{ upload_link }}</a></small>
+    </div>
+  {% endif %}
+
+</div>
+
+<!-- Your existing JavaScript unchanged -->
+
+{% endblock %}
